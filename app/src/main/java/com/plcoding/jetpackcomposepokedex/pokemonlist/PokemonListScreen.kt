@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -53,7 +54,7 @@ fun PokemonListScreen(
                 painter = painterResource(id = R.drawable.ic_international_pok_mon_logo),
                 contentDescription = "Pokemon",
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .align(CenterHorizontally)
             )
             SearchBar(
@@ -62,6 +63,8 @@ fun PokemonListScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             )
+            Spacer(modifier = Modifier.height(16.dp))
+            PokemonList(navController = navController)
         }
     }
 }
@@ -110,6 +113,31 @@ fun SearchBar(
 }
 
 @Composable
+fun PokemonList(
+    navController: NavController,
+    viewModel: PokemonListViewModel = hiltNavGraphViewModel()
+) {
+    val pokemonList by remember { viewModel.pokemonList }
+    val endReached by remember { viewModel.endReached }
+    val loadError by remember { viewModel.loadError }
+    val isLoading by remember { viewModel.isLoading }
+
+    LazyColumn(contentPadding = PaddingValues(16.dp)) {
+        val itemCount = if (pokemonList.size % 2 == 0) {
+            pokemonList.size / 2
+        } else {
+            pokemonList.size / 2 + 1
+        }
+        items(itemCount) {
+            if (it >= itemCount - 1 && !endReached) {
+                viewModel.loadPokemonPaginated()
+            }
+            PokedexRow(rowIndex = it, entries = pokemonList, navController = navController)
+        }
+    }
+}
+
+@Composable
 fun PokedexEntry(
     entry: PokedexListEntry,
     navController: NavController,
@@ -123,7 +151,7 @@ fun PokedexEntry(
 
     Box(
         contentAlignment = Center,
-        modifier = Modifier
+        modifier = modifier
             .shadow(5.dp, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
             .aspectRatio(1f)
@@ -134,7 +162,7 @@ fun PokedexEntry(
             )
             .clickable {
                 navController.navigate(
-                    "$POKEMON_DETAIL_SCREEN/${dominantColor.toArgb()}/${entry.pokemonName}"
+                    "pokemon_detail_screen/${dominantColor.toArgb()}/${entry.pokemonName}"
                 )
             }
     ) {
@@ -192,7 +220,6 @@ fun PokedexRow(
             } else {
                 Spacer(modifier = Modifier.weight(1f))
             }
-            
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
